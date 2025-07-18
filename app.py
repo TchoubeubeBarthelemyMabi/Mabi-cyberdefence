@@ -25,12 +25,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 @app.errorhandler(500)
 def internal_error(error):
     return "Erreur interne du serveur", 500
-
-try:
-except Exception as e:
-    app.logger.error(f"Erreur dans /login : {e}")
-    return "Erreur serveur", 500
-
+    
 db = SQLAlchemy(app)
 migrate = Migrate(app, db, render_as_batch=True)
 login_manager = LoginManager(app)
