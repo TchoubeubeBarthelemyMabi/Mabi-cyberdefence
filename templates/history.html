@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+<form method="POST" action="{{ url_for('export_history') }}">
+  <button type="submit"
+          style="margin-bottom:20px; padding:10px 18px; background:#4CAF50; color:white;
+                 border:none; border-radius:6px; font-size:16px; cursor:pointer;">
+    📁 Télécharger l’historique (.CSV)
+  </button>
+</form>
+{% block content %}
+<div class="text-background" style="max-width:950px; margin:auto;">
+  <h2 style="font-size:32px; margin-bottom:20px;">📜 Historique des scans</h2>
+
+  {% if histories %}
+    <table style="width:100%; border-collapse:collapse; font-size:16px;">
+      <thead>
+        <tr style="background:#1976D2; color:white;">
+          <th style="padding:12px;">Type</th>
+          <th style="padding:12px;">Cible</th>
+          <th style="padding:12px;">Résultat</th>
+          <th style="padding:12px;">Date & Heure</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in histories %}
+        <tr style="background-color:{{ loop.index0 % 2 == 0 and '#f9f9f9' or '#ffffff' }};">
+          <td style="padding:10px;">
+            {{ '🔗 Lien' if h.scan_type == 'link' else '🌐 Site' }}
+          </td>
+          <td style="padding:10px;">{{ h.target }}</td>
+          <td style="padding:10px; font-weight:bold;">
+            {% if h.status == 'danger' %}
+              <span style="color:#e53935;">❗️ {{ h.result }}</span>
+            {% elif h.status == 'safe' %}
+              <span style="color:#43A047;">✅ {{ h.result }}</span>
+            {% else %}
+              <span style="color:#FFA000;">⚠️ {{ h.result }}</span>
+            {% endif %}
+          </td>
+          <td style="padding:10px;">{{ h.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="font-size:18px;">Aucun scan enregistré pour le moment.</p>
+  {% endif %}
+</div>
+{% endblock %}
