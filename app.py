@@ -64,6 +64,10 @@ class ScanHistory(db.Model):
     status = db.Column(db.String(20), nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
 
+@app.route('/ping')
+def ping():
+    return "✅ Mabi Cybersécurité est en ligne."
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
