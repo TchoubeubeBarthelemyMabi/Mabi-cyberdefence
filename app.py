@@ -22,7 +22,11 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'ok')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mabi.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-@app.errorhandler(500)
+@app.route('/', methods=['GET','POST'])
+@login_required
+def home():
+    ...
+    @app.errorhandler(500)
 def internal_error(error):
     return "Erreur interne du serveur", 500
     
