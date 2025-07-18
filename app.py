@@ -235,5 +235,5 @@ def account():
 def about():
     return render_template('about.html')
 
-attach_security(app)
+
 
