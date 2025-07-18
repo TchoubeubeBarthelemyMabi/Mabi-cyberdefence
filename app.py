@@ -106,7 +106,7 @@ def verifier_url(url):
         time.sleep(1)
     return {"status":"waiting","message":"⏳ Analyse en cours, patientez…"}
 
-@app.route('/', methods=['GET','POST'])
+@app.route('/login', methods=['GET','POST'])
 @login_required
 def home():
     result = None
