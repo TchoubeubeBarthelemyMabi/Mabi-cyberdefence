@@ -22,13 +22,14 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'ok')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mabi.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-@app.errorhandler(Exception)
-def handle_exception(e):
-    tb = traceback.format_exc()
-    app.logger.error(f"Exception: {e}\n{tb}")
-    if isinstance(e, HTTPException):
-        return e
-    return jsonify({"error": "Une erreur serveur est survenue."}), 500
+@app.errorhandler(500)
+def internal_error(error):
+    return "Erreur interne du serveur", 500
+
+try:
+except Exception as e:
+    app.logger.error(f"Erreur dans /login : {e}")
+    return "Erreur serveur", 500
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db, render_as_batch=True)
