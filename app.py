@@ -22,18 +22,26 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'ok')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mabi.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-@app.route('/', methods=['GET','POST'])
-@login_required
-def home():
-    ...
-    @app.errorhandler(500)
-def internal_error(error):
-    return "Erreur interne du serveur", 500
-    
 db = SQLAlchemy(app)
 migrate = Migrate(app, db, render_as_batch=True)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    tb = traceback.format_exc()
+    app.logger.error(f"Exception: {e}\n{tb}")
+    if isinstance(e, HTTPException):
+        return e
+    return jsonify({"error": "Une erreur serveur est survenue."}), 500
+
+@app.route('/ping')
+def ping():
+    return "✅ Mabi Cybersécurité est en ligne."
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -41,15 +49,19 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(200), nullable=False)
     api_key_hash = db.Column(db.String(64), nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
+
     def set_password(self, pwd):
         self.password_hash = generate_password_hash(pwd)
+
     def check_password(self, pwd):
         return check_password_hash(self.password_hash, pwd)
+
     def generate_api_key(self):
         key = binascii.hexlify(os.urandom(24)).decode()
         self.api_key_hash = hashlib.sha256(key.encode()).hexdigest()
         db.session.commit()
         return key
+
     def check_api_key(self, key):
         if not self.api_key_hash:
             return False
@@ -63,14 +75,6 @@ class ScanHistory(db.Model):
     result = db.Column(db.String(255), nullable=False)
     status = db.Column(db.String(20), nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
-
-@app.route('/ping')
-def ping():
-    return "✅ Mabi Cybersécurité est en ligne."
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
 
 class SignupForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -109,7 +113,7 @@ def verifier_url(url):
         time.sleep(1)
     return {"status":"waiting","message":"⏳ Analyse en cours, patientez…"}
 
-@app.route('/login', methods=['GET','POST'])
+@app.route('/', methods=['GET','POST'])
 @login_required
 def home():
     result = None
@@ -120,7 +124,8 @@ def home():
             return redirect(url_for('home'))
         result = verifier_url(url)
         history = ScanHistory(user_id=current_user.id, scan_type='link', target=url, result=result['message'], status=result['status'])
-        db.session.add(history); db.session.commit()
+        db.session.add(history)
+        db.session.commit()
     return render_template('home.html', result=result)
 
 @app.route('/vulnscan', methods=['GET','POST'])
@@ -173,6 +178,7 @@ def vulnscan():
 def history():
     histories = ScanHistory.query.filter_by(user_id=current_user.id).order_by(ScanHistory.timestamp.desc()).all()
     return render_template('history.html', histories=histories)
+
 @app.route('/export-history', methods=['POST'])
 @login_required
 def export_history():
@@ -205,43 +211,8 @@ def export_history():
         }
     )
 
-
-
 @app.route('/login', methods=['GET','POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        u = User.query.filter_by(email=form.email.data).first()
-        if u and u.check_password(form.password.data):
-            login_user(u); flash("Connexion réussie !","success"); return redirect(url_for('home'))
-        flash("Email ou mot de passe invalide.","danger")
-    return render_template('login.html', form=form)
-
-@app.route('/signup', methods=['GET','POST'])
-def signup():
-    form = SignupForm()
-    if form.validate_on_submit():
-        if User.query.filter_by(email=form.email.data).first():
-            flash("Email déjà utilisé.","warning"); return redirect(url_for('signup'))
-        u=User(email=form.email.data); u.set_password(form.password.data)
-        db.session.add(u); db.session.commit()
-        flash("Inscription réussie.","success"); return redirect(url_for('login'))
-    return render_template('signup.html', form=form)
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user(); flash("Déconnexion réussie.","info"); return redirect(url_for('login'))
-
-@app.route('/account')
-@login_required
-def account():
-    return render_template('account.html')
-
-@app.route('/about')
-@login_required
-def about():
-    return render_template('about.html')
-
-
-
+        u = User.query.filter
